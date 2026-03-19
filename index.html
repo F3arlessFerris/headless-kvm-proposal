@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Headless Device Control — Field Solution Proposal</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #07080a;
+    --surface: #0e1014;
+    --surface2: #13161b;
+    --border: #1e2229;
+    --accent: #1fb6c9;
+    --accent-dim: rgba(31,182,201,0.12);
+    --accent-glow: rgba(31,182,201,0.25);
+    --text: #e8eaed;
+    --text-dim: #7a8494;
+    --text-mid: #b0b8c4;
+    --green: #22c55e;
+    --yellow: #f59e0b;
+    --red: #ef4444;
+    --mono: 'Space Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .header {
+    border-bottom: 1px solid var(--border);
+    padding: 48px 64px 40px;
+    position: relative;
+    overflow: hidden;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .header::before {
+    content: '';
+    position: absolute;
+    top: -80px; left: -80px;
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(31,182,201,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .header-tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .header-tag::before {
+    content: '';
+    display: inline-block;
+    width: 24px; height: 1px;
+    background: var(--accent);
+  }
+
+  h1 {
+    font-family: var(--mono);
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.2;
+    margin-bottom: 12px;
+    letter-spacing: -0.02em;
+  }
+
+  h1 span { color: var(--accent); }
+
+  .header-sub {
+    color: var(--text-mid);
+    font-size: 16px;
+    font-weight: 300;
+    max-width: 600px;
+  }
+
+  .header-meta {
+    margin-top: 28px;
+    display: flex;
+    gap: 32px;
+    justify-content: center;
+  }
+
+  .meta-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .meta-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+  }
+
+  .meta-value {
+    font-size: 14px;
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 64px 80px;
+  }
+
+  .section {
+    padding: 48px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section:last-child { border-bottom: none; }
+
+  .section-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-label .num { color: var(--text-dim); }
+
+  h2 {
+    font-family: var(--mono);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 16px;
+    letter-spacing: -0.01em;
+  }
+
+  h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+
+  p {
+    color: var(--text-mid);
+    margin-bottom: 14px;
+  }
+
+  p:last-child { margin-bottom: 0; }
+
+  .problem-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 24px;
+  }
+
+  .problem-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+  }
+
+  .problem-card .icon { font-size: 20px; margin-bottom: 10px; }
+  .problem-card h3 { font-size: 14px; margin-bottom: 6px; }
+  .problem-card p { font-size: 13px; margin: 0; }
+
+  .diagram {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 32px;
+    margin: 24px 0;
+    font-family: var(--mono);
+    font-size: 13px;
+    overflow-x: auto;
+  }
+
+  .diagram-title {
+    font-size: 10px;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    margin-bottom: 24px;
+  }
+
+  .flow { display: flex; flex-direction: column; gap: 0; }
+
+  .flow-row {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-bottom: 4px;
+  }
+
+  .flow-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 16px;
+    color: var(--text);
+    white-space: nowrap;
+    min-width: 200px;
+  }
+
+  .flow-box.highlight {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-dim);
+  }
+
+  .flow-box.laptop {
+    border-color: #22c55e;
+    color: #22c55e;
+    background: rgba(34,197,94,0.08);
+  }
+
+  .flow-label {
+    color: var(--text-dim);
+    font-size: 11px;
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+
+  .flow-connector {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding-left: 24px;
+    margin: 2px 0;
+  }
+
+  .flow-connector-line {
+    color: var(--text-dim);
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  .shopping-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 24px;
+  }
+
+  .item-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 24px;
+    display: grid;
+    grid-template-columns: 40px 1fr auto;
+    gap: 16px;
+    align-items: start;
+    transition: border-color 0.2s;
+  }
+
+  .item-card:hover { border-color: rgba(31,182,201,0.3); }
+
+  .item-number {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    background: var(--accent-dim);
+    border: 1px solid rgba(31,182,201,0.2);
+    border-radius: 4px;
+    width: 32px; height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    margin-top: 2px;
+  }
+
+  .item-body {}
+
+  .item-name {
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .item-desc {
+    font-size: 13px;
+    color: var(--text-mid);
+    margin-bottom: 10px;
+    line-height: 1.5;
+  }
+
+  .item-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+
+  .tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .tag-required { background: rgba(239,68,68,0.12); color: #ef4444; border: 1px solid rgba(239,68,68,0.2); }
+  .tag-included { background: rgba(34,197,94,0.1); color: #22c55e; border: 1px solid rgba(34,197,94,0.2); }
+  .tag-optional { background: rgba(245,158,11,0.1); color: #f59e0b; border: 1px solid rgba(245,158,11,0.2); }
+
+  .item-price {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    min-width: 100px;
+  }
+
+  .price { font-family: var(--mono); font-size: 18px; font-weight: 700; color: var(--text); }
+  .price-note { font-size: 11px; color: var(--text-dim); text-align: right; }
+
+  .buy-btn {
+    display: inline-block;
+    background: var(--accent);
+    color: #000;
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 7px 14px;
+    border-radius: 4px;
+    text-decoration: none;
+    transition: opacity 0.2s;
+    white-space: nowrap;
+  }
+
+  .buy-btn:hover { opacity: 0.85; }
+
+  .total-bar {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-top: 1px solid var(--accent);
+    border-radius: 0 0 10px 10px;
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: -1px;
+  }
+
+  .total-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+  }
+
+  .total-amount { font-family: var(--mono); font-size: 22px; font-weight: 700; color: var(--accent); }
+
+  .steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-top: 24px;
+    position: relative;
+  }
+
+  .steps::before {
+    content: '';
+    position: absolute;
+    left: 19px;
+    top: 40px;
+    bottom: 40px;
+    width: 1px;
+    background: var(--border);
+  }
+
+  .step { display: grid; grid-template-columns: 40px 1fr; gap: 20px; padding: 16px 0; }
+
+  .step-num {
+    width: 40px; height: 40px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+  }
+
+  .step-title { font-weight: 600; font-size: 15px; color: var(--text); margin-bottom: 6px; padding-top: 8px; }
+  .step-body { font-size: 13px; color: var(--text-mid); line-height: 1.6; }
+
+  .code-inline {
+    font-family: var(--mono);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--accent);
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+  }
+
+  .usecase-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 24px;
+  }
+
+  .usecase-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+  }
+
+  .usecase-card .uc-icon { font-size: 22px; margin-bottom: 10px; }
+  .usecase-card h3 { font-size: 14px; margin-bottom: 6px; }
+  .usecase-card p { font-size: 13px; margin: 0; }
+
+  .faq-list { display: flex; flex-direction: column; gap: 16px; margin-top: 24px; }
+
+  .faq-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px 20px;
+  }
+
+  .faq-q {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .faq-q::before {
+    content: 'Q';
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent);
+    background: var(--accent-dim);
+    border: 1px solid rgba(31,182,201,0.2);
+    border-radius: 3px;
+    padding: 2px 6px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .faq-a { font-size: 13px; color: var(--text-mid); padding-left: 34px; line-height: 1.6; }
+
+  .callout {
+    background: var(--accent-dim);
+    border: 1px solid rgba(31,182,201,0.25);
+    border-radius: 8px;
+    padding: 18px 20px;
+    margin: 20px 0;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .callout-icon { font-size: 18px; flex-shrink: 0; }
+  .callout-text { font-size: 13px; color: var(--text-mid); line-height: 1.6; }
+  .callout-text strong { color: var(--accent); }
+
+  .footer {
+    border-top: 1px solid var(--border);
+    padding: 32px 64px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .footer-left { font-family: var(--mono); font-size: 11px; color: var(--text-dim); }
+  .footer-right { font-family: var(--mono); font-size: 11px; color: var(--text-dim); }
+
+  @media print {
+    body { background: white; color: black; }
+    .buy-btn { display: none; }
+  }
+
+  @media (max-width: 700px) {
+    .header, .container, .footer { padding-left: 24px; padding-right: 24px; }
+    .problem-grid, .usecase-grid { grid-template-columns: 1fr; }
+    .item-card { grid-template-columns: 40px 1fr; }
+    .item-price { display: none; }
+    h1 { font-size: 22px; }
+    .header-meta { flex-wrap: wrap; gap: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-tag">Field Operations Proposal</div>
+  <h1>Headless Device Control<br><span>Without a Screen, Mouse, or Network</span></h1>
+  <p class="header-sub">A portable, offline-capable KVM solution for controlling headless computers and IoT devices from a single laptop — no monitor, no keyboard, no internet required.</p>
+  <div class="header-meta">
+    <div class="meta-item">
+      <span class="meta-label">Total Cost</span>
+      <span class="meta-value">~$65 per kit</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Setup Time</span>
+      <span class="meta-value">Under 5 minutes</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Internet Required</span>
+      <span class="meta-value">None</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Software to Install</span>
+      <span class="meta-value">None (Chrome only)</span>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- THE PROBLEM -->
+  <div class="section">
+    <div class="section-label"><span class="num">01</span> The Problem</div>
+    <h2>What This Solves</h2>
+    <p>Field teams regularly need to access, configure, and troubleshoot computers and IoT devices that have no monitor, keyboard, or mouse attached. Whether the device is completely offline or running on its own network connection, the blocker is always the same: no way to see the screen or interact with the machine without hauling peripherals to the site.</p>
+    <div class="problem-grid">
+      <div class="problem-card">
+        <div class="icon">🖥️</div>
+        <h3>No screen on headless devices</h3>
+        <p>Field computers and IoT units often run without displays. Troubleshooting currently requires borrowing a monitor or being near a full setup.</p>
+      </div>
+      <div class="problem-card">
+        <div class="icon">🌐</div>
+        <h3>No internet at client sites</h3>
+        <p>Many facilities have restricted or no network access. Remote desktop solutions (TeamViewer, RDP) simply don't apply in these environments.</p>
+      </div>
+      <div class="problem-card">
+        <div class="icon">🧳</div>
+        <h3>Gear overhead</h3>
+        <p>Carrying a spare keyboard, mouse, and monitor to every site is impractical. It slows deployments and adds failure points to every visit.</p>
+      </div>
+      <div class="problem-card">
+        <div class="icon">⏱️</div>
+        <h3>On-site time wasted</h3>
+        <p>Techs spend time locating peripheral equipment instead of doing the actual work. Billable time burns while scrambling for a spare monitor.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- THE SOLUTION -->
+  <div class="section">
+    <div class="section-label"><span class="num">02</span> The Solution</div>
+    <h2>NanoKVM-USB — Finger-Sized Control</h2>
+    <p>The <strong style="color:var(--text)">Sipeed NanoKVM-USB</strong> is a tiny aluminum device (~55mm long) that plugs into any target machine via HDMI and USB-C. It captures the video output and emulates a keyboard and mouse. Your laptop connects to it directly via a second USB-C cable and controls the target machine through Chrome — completely offline, no software, no network required on your end.</p>
+
+    <p>This solution works regardless of the target device's network status. The KVM operates at the hardware layer only — it does not touch, interrupt, or depend on any network connection the target machine may have.</p>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:24px 0;">
+      <div class="callout" style="margin:0;">
+        <div class="callout-icon">📡</div>
+        <div class="callout-text"><strong>Scenario A — Device has an active network connection:</strong> The target machine continues running on its own network as normal. The KVM plugs in purely to give you a screen and peripherals on your laptop. When you unplug and walk away, the device carries on completely unaffected.</div>
+      </div>
+      <div class="callout" style="margin:0;background:rgba(34,197,94,0.06);border-color:rgba(34,197,94,0.2);">
+        <div class="callout-icon">🔌</div>
+        <div class="callout-text"><strong>Scenario B — Device is completely offline:</strong> No network anywhere on site. The KVM still works because it connects directly to your laptop over USB-C with no network required. Full control in a completely air-gapped environment.</div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <div class="callout-icon">💡</div>
+      <div class="callout-text"><strong>Key insight:</strong> Your laptop's HDMI port is output-only and cannot receive video from another machine. The NanoKVM-USB acts as the bridge — it captures the target's video over HDMI and delivers it to your laptop over USB-C. The target machine has no idea it isn't connected to a real monitor, keyboard, and mouse.</div>
+    </div>
+
+    <div class="diagram">
+      <div class="diagram-title">// Connection Diagram — Field Setup (both scenarios)</div>
+      <div class="flow">
+        <div class="flow-row">
+          <div class="flow-box">Headless target device</div>
+          <div class="flow-label">Active network connection OR fully offline — either works</div>
+        </div>
+        <div class="flow-connector">
+          <div class="flow-connector-line">│  ├─ HDMI cable ──────────────────→ NanoKVM-USB [TARGET HDMI IN]</div>
+          <div class="flow-connector-line">│  └─ USB-C cable ─────────────────→ NanoKVM-USB [TARGET USB-C]</div>
+        </div>
+        <div class="flow-row">
+          <div class="flow-box highlight">NanoKVM-USB</div>
+          <div class="flow-label">↔ captures video + injects keyboard/mouse</div>
+        </div>
+        <div class="flow-connector">
+          <div class="flow-connector-line">│  └─ USB-C cable ─────────────────→ Technician's laptop [USB-C port]</div>
+        </div>
+        <div class="flow-row">
+          <div class="flow-box laptop">Technician's Laptop</div>
+          <div class="flow-label">Open Chrome → usbkvm.sipeed.com</div>
+        </div>
+      </div>
+    </div>
+
+    <p>The dummy HDMI plug is critical. Without a physical monitor connected, most GPUs will not output a video signal. The dummy plug is an 8-gram passive adapter that tricks the GPU into thinking a 1080p monitor is present, ensuring a full-resolution signal is always available to capture.</p>
+  </div>
+
+  <!-- SHOPPING LIST -->
+  <div class="section">
+    <div class="section-label"><span class="num">03</span> Hardware Required</div>
+    <h2>Exactly What to Buy</h2>
+    <p>Three items. Total cost ~$65. The NanoKVM-USB kit includes all cables. The dummy plug is the only separate purchase.</p>
+
+    <div class="shopping-list">
+
+      <div class="item-card">
+        <div class="item-number">01</div>
+        <div class="item-body">
+          <div class="item-name">Sipeed NanoKVM-USB — Kit Version</div>
+          <div class="item-desc">The core device. Captures HDMI output from the target machine and relays keyboard/mouse input. Kit version includes HDMI cable, loop-out cable, and USB-C cables. Get <strong style="color:var(--text)">Kit1 or Kit2</strong> — both include all necessary cables. Black anodized aluminum enclosure, 55×22×25mm.</div>
+          <div class="item-tags">
+            <span class="tag tag-required">Required</span>
+            <span class="tag tag-included">Cables included in kit</span>
+          </div>
+        </div>
+        <div class="item-price">
+          <div class="price">~$50</div>
+          <div class="price-note">with cables</div>
+          <a class="buy-btn" href="https://www.amazon.com/dp/B0DWXM11D3" target="_blank">Buy on Amazon ↗</a>
+        </div>
+      </div>
+
+      <div class="item-card">
+        <div class="item-number">02</div>
+        <div class="item-body">
+          <div class="item-name">HDMI Dummy Plug — Pack of 3</div>
+          <div class="item-desc">A passive adapter that emulates a 1080p monitor. Without this, most GPUs output no video signal when no physical monitor is connected, leaving the KVM with a blank screen. Tiny, lightweight, no power needed. <strong style="color:var(--text)">Buy a 3-pack</strong> — they're easy to lose and you'll want spares in every kit.</div>
+          <div class="item-tags">
+            <span class="tag tag-required">Required</span>
+          </div>
+        </div>
+        <div class="item-price">
+          <div class="price">~$8</div>
+          <div class="price-note">3-pack</div>
+          <a class="buy-btn" href="https://www.amazon.com/s?k=HDMI+dummy+plug+headless+ghost+display+emulator+1080p+3+pack" target="_blank">Search Amazon ↗</a>
+        </div>
+      </div>
+
+      <div class="item-card">
+        <div class="item-number">03</div>
+        <div class="item-body">
+          <div class="item-name">USB-C to USB-A Adapter — Pack of 2</div>
+          <div class="item-desc">Required for target machines that have USB-A ports only. The NanoKVM-USB uses USB-C for the HID (keyboard/mouse) connection to the target, so this adapter bridges the gap when the target has no USB-C port available. Small, passive, no power needed.</div>
+          <div class="item-tags">
+            <span class="tag tag-required">Required for USB-A only targets</span>
+          </div>
+        </div>
+        <div class="item-price">
+          <div class="price">~$7</div>
+          <div class="price-note">2-pack</div>
+          <a class="buy-btn" href="https://www.amazon.com/s?k=USB-C+to+USB-A+adapter+pack" target="_blank">Search Amazon ↗</a>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="total-bar">
+      <div>
+        <div class="total-label">Total per field kit</div>
+        <div style="font-size:12px;color:var(--text-dim);margin-top:2px;">NanoKVM-USB kit + dummy plugs + USB-A adapter</div>
+      </div>
+      <div class="total-amount">~$65</div>
+    </div>
+  </div>
+
+  <!-- SETUP -->
+  <div class="section">
+    <div class="section-label"><span class="num">04</span> Setup Instructions</div>
+    <h2>Field Setup — Under 5 Minutes</h2>
+    <p>No software installation on either machine. No network configuration. No accounts. Just cables and Chrome.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <div class="step-title">Install the HDMI Dummy Plug on the target device</div>
+          <div class="step-body">Insert the dummy plug into the HDMI port on the target machine. It stays there permanently. It's passive and uses no power. This ensures the GPU always outputs a video signal even with no physical monitor present.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <div class="step-title">Connect HDMI cable: target machine → NanoKVM-USB</div>
+          <div class="step-body">Run the included HDMI cable from the target machine's HDMI output port into the <strong style="color:var(--text)">HDMI IN</strong> port on the NanoKVM-USB (the side marked with an arrow pointing in). Any standard HDMI cable works.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <div class="step-title">Connect USB-C cable: target machine → NanoKVM-USB</div>
+          <div class="step-body">Plug one end of the USB-C cable into the target machine's USB-C port, and the other end into the NanoKVM-USB <strong style="color:var(--text)">TARGET USB-C</strong> port. This carries keyboard and mouse emulation signals. If the target only has USB-A, use the USB-C to USB-A adapter here.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <div class="step-title">Connect USB-C cable: NanoKVM-USB → your laptop</div>
+          <div class="step-body">Plug the second USB-C cable from the NanoKVM-USB <strong style="color:var(--text)">HOST USB-C</strong> port into your laptop. This is the only connection your laptop needs. It powers the NanoKVM-USB and carries the video and control signals.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-content">
+          <div class="step-title">Open Chrome and go to usbkvm.sipeed.com</div>
+          <div class="step-body">On your laptop, open Google Chrome and navigate to <span class="code-inline">usbkvm.sipeed.com</span>. Allow camera and microphone permissions when prompted (the device appears as a USB video source). The target machine's screen appears immediately in the browser. Click the screen to pass keyboard and mouse control through to the target. Fully offline — no internet required after the first page load.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <div class="callout-icon">⚠️</div>
+      <div class="callout-text"><strong>Browser note:</strong> Must use Google Chrome desktop. Firefox and Edge do not support the Web USB API used by the NanoKVM-USB. Ensure Chrome is up to date on field laptops before deployment.</div>
+    </div>
+  </div>
+
+  <!-- USE CASES -->
+  <div class="section">
+    <div class="section-label"><span class="num">05</span> Use Cases</div>
+    <h2>Where This Applies</h2>
+    <div class="usecase-grid">
+      <div class="usecase-card">
+        <div class="uc-icon">📡</div>
+        <h3>Devices with active connections — peripheral access only</h3>
+        <p>Device is online and running normally. The KVM plugs in to give the tech a screen and keyboard on their laptop. Unplug when done — device continues completely unaffected.</p>
+      </div>
+      <div class="usecase-card">
+        <div class="uc-icon">🔒</div>
+        <h3>Fully offline and air-gapped sites</h3>
+        <p>No network anywhere on site. Works in facilities where no internet or external access is permitted, including hospitals, government buildings, and secure data centers.</p>
+      </div>
+      <div class="usecase-card">
+        <div class="uc-icon">🏭</div>
+        <h3>Client facility deployments</h3>
+        <p>Configure and verify IoT and field computing devices on-site without requiring a dedicated monitor or access to client network infrastructure.</p>
+      </div>
+      <div class="usecase-card">
+        <div class="uc-icon">🔧</div>
+        <h3>Field troubleshooting</h3>
+        <p>Diagnose firmware issues, check OS-level errors, or reconfigure network settings on headless machines without pulling them from the rack.</p>
+      </div>
+      <div class="usecase-card">
+        <div class="uc-icon">💻</div>
+        <h3>BIOS and pre-boot access</h3>
+        <p>Access BIOS and UEFI settings on field units before the OS loads — not possible with any software-based remote desktop tool.</p>
+      </div>
+      <div class="usecase-card">
+        <div class="uc-icon">📦</div>
+        <h3>Staging and provisioning</h3>
+        <p>Pre-configure devices in the shop before deployment without needing a dedicated staging station with a full monitor setup at every bench.</p>
+      </div>
+      <div class="usecase-card">
+        <div class="uc-icon">🚀</div>
+        <h3>Rapid OS recovery</h3>
+        <p>The USB-A port on the NanoKVM-USB can share a flash drive between your laptop and the target. Boot from a recovery USB without disconnecting and reconnecting drives.</p>
+      </div>
+      <div class="usecase-card">
+        <div class="uc-icon">🔁</div>
+        <h3>Non-disruptive access</h3>
+        <p>On devices with active connections, the KVM provides access without interrupting the device's running services or network state. Plug in, do the work, unplug.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- FAQ -->
+  <div class="section">
+    <div class="section-label"><span class="num">06</span> FAQ</div>
+    <h2>Common Questions</h2>
+    <div class="faq-list">
+
+      <div class="faq-item">
+        <div class="faq-q">Does this require any software installed on the target machine?</div>
+        <div class="faq-a">No. The NanoKVM-USB requires zero software on the target. It emulates hardware peripherals at the USB level, so the machine sees a monitor, keyboard, and mouse — no driver or agent needed.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Does this require an internet connection?</div>
+        <div class="faq-a">No. The KVM connects directly to your laptop over USB-C. No network, no hotspot, no router needed. The browser app at usbkvm.sipeed.com loads once and then runs entirely locally over the USB link.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">The target device is online and running. Does the KVM affect its connection?</div>
+        <div class="faq-a">Not at all. The NanoKVM-USB operates purely at the hardware layer — HDMI for video, USB for keyboard and mouse. It has no interaction with the device's network stack or active connections. The device continues operating exactly as normal while the KVM is plugged in, and nothing changes when you unplug.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">What if the target machine has no USB-C port?</div>
+        <div class="faq-a">Use the USB-C to USB-A adapter (Item 03). The NanoKVM-USB uses USB-C on its own connectors — the adapter bridges to USB-A on the target with no loss of functionality.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">What resolution does it display at?</div>
+        <div class="faq-a">The dummy plug emulates a 1080p monitor, so the target machine outputs at 1920×1080. The NanoKVM-USB captures and delivers this at full 1080p in Chrome. Full 4K capture is also supported if a 4K dummy plug is used instead.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Can this be used to install an OS on the target machine?</div>
+        <div class="faq-a">Yes. The NanoKVM-USB has a USB-A port with a host/target switch. Insert a flash drive with an OS image, assign it to the host laptop, write the ISO using Rufus, then switch the drive to the target and boot from it — all without unplugging anything.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">What's the latency like?</div>
+        <div class="faq-a">50–100ms — slightly slower than a direct display, but completely usable for configuration, file management, terminal sessions, and BIOS access. Not suitable for video editing or gaming, but that's not the use case here.</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Is this the same as the NanoKVM Cube (ethernet version)?</div>
+        <div class="faq-a">No. The NanoKVM-USB connects directly to your laptop via USB-C with no network needed. The NanoKVM Cube connects via ethernet and requires both devices on the same network. For field use, the USB version is the right choice.</div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <div class="footer-left">Headless Device Control — Field Solution Proposal</div>
+  <div class="footer-right">Works on networked and fully offline devices · ~$65 per kit · No software required</div>
+</div>
+
+</body>
+</html>
